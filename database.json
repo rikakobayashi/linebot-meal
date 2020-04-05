@@ -1,0 +1,15 @@
+{
+    "init": {
+        "driver": "pg",
+        "user": "rikakobayashi",
+        "password": "",
+        "host": "localhost"
+    },
+    "dev": {
+        "driver": "pg",
+        "user": "rikakobayashi",
+        "password": "",
+        "host": "localhost",
+        "database": "testDB"
+    }
+}
