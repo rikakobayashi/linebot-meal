@@ -116,12 +116,9 @@ function parseTime(time) {
   //   const setMessage = /^set/i
   //   if (text.match(setMessage) === null) {
   // 確認時間を設定
-  const timeArray = time.substring(4).split(':')
-  console.log(time)
+  const timeArray = time.split(':')
   const hour = parseInt(timeArray[0])
-  console.log(hour)
   const minute = parseInt(timeArray[1])
-  console.log(minute)
   if (!hour || !minute) return null
   if (hour < 24 || minute < 60) return null
   return '00 ' + minute + ' ' + hour + ' * * *'
