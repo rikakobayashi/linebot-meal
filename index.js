@@ -80,7 +80,7 @@ function handleSchedule(text) {
   }
 }
 
-function checkEatOut(event) {
+function checkEatOut() {
   const check = {
     type: 'template',
     altText: 'this is a confirm template',
@@ -101,6 +101,7 @@ function checkEatOut(event) {
       ]
     }
   }
+  client.pushMessage('1654004698', check)
 }
 
 function setSchedule(time) {
