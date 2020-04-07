@@ -119,9 +119,11 @@ function parseTime(time) {
   const timeArray = time.split(':')
   const hour = parseInt(timeArray[0])
   const minute = parseInt(timeArray[1])
-  console.log(time + ' ' + hour + ' ' + minute)
+  console.log(time + ' ' + !hour + ' ' + !minute)
   if (!hour || !minute) return null
+  console.log('ok')
   if (hour < 24 || minute < 60) return null
+  console.log('ok!')
   return '00 ' + minute + ' ' + hour + ' * * *'
   //   }
 }
