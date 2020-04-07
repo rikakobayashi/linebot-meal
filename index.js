@@ -44,12 +44,16 @@ app.post('/callback', line.middleware(config), (req, res) => {
     })
 })
 
+let userId = ''
+
 // event handler
 function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
     return Promise.resolve(null)
   }
+
+  userId = event.source.userId
 
   // create a echoing text message
   const echo = {
@@ -101,7 +105,7 @@ function checkEatOut() {
       ]
     }
   }
-  client.pushMessage('1654004698', check)
+  client.pushMessage(userId, check)
 }
 
 function setSchedule(time) {
@@ -109,7 +113,7 @@ function setSchedule(time) {
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
   cron.schedule(when, checkEatOut)
-  return '毎日' + text + 'にリマインドを送ります'
+  return '毎日' + time + 'にリマインドを送ります'
 }
 
 function parseTime(time) {
