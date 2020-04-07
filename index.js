@@ -112,7 +112,6 @@ function setSchedule(time) {
   const when = parseTime(time)
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
-  checkEatOut()
   cron.schedule(when, checkEatOut, {
     scheduled: true,
     timezone: 'Asia/Tokyo'
