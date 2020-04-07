@@ -107,25 +107,18 @@ function checkEatOut() {
 function setSchedule(time) {
   const when = parseTime(time)
   if (!when)
-    return '時間は半角数字、「:」区切りで入力してください。\n[例] 15:00'
+    return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
   cron.schedule(when, checkEatOut)
   return '毎日' + text + 'にリマインドを送ります'
 }
 
 function parseTime(time) {
-  //   const setMessage = /^set/i
-  //   if (text.match(setMessage) === null) {
-  // 確認時間を設定
   const timeArray = time.split(':')
   const hour = parseInt(timeArray[0])
   const minute = parseInt(timeArray[1])
-  console.log(time + ' ' + !hour + ' ' + !minute)
   if (!hour || !minute) return null
-  console.log('ok')
-  if (hour < 24 || minute < 60) return null
-  console.log('ok!')
+  if (hour >= 24 || minute >= 60) return null
   return '00 ' + minute + ' ' + hour + ' * * *'
-  //   }
 }
 
 const port = process.env.PORT || 3000
