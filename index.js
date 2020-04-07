@@ -45,26 +45,6 @@ app.post('/callback', line.middleware(config), (req, res) => {
 })
 
 let userId = ''
-const check = {
-  type: 'template',
-  altText: 'this is a confirm template',
-  template: {
-    type: 'confirm',
-    text: '今日は家で食べる？',
-    actions: [
-      {
-        type: 'message',
-        label: 'はい',
-        text: 'yes'
-      },
-      {
-        type: 'message',
-        label: 'いいえ',
-        text: 'no'
-      }
-    ]
-  }
-}
 
 // event handler
 function handleEvent(event) {
@@ -87,7 +67,7 @@ function handleEvent(event) {
   }
 
   // use reply API
-  return client.replyMessage(event.replyToken, check)
+  return client.replyMessage(event.replyToken, response)
 }
 
 function handleSchedule(text) {
@@ -132,6 +112,7 @@ function setSchedule(time) {
   const when = parseTime(time)
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
+  checkEatOut()
   cron.schedule(when, checkEatOut, {
     scheduled: true,
     timezone: 'Asia/Tokyo'
