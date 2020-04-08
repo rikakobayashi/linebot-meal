@@ -48,7 +48,7 @@ app.post('/callback', line.middleware(config), (req, res) => {
 let userId = ''
 
 // event handler
-function handleEvent(event) {
+async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
     return Promise.resolve(null)
@@ -64,15 +64,15 @@ function handleEvent(event) {
 
   const response = {
     type: 'text',
-    text: handleSchedule(event.message.text)
+    text: await handleSchedule(event.message.text)
   }
 
   // use reply API
   return client.replyMessage(event.replyToken, response)
 }
 
-function handleSchedule(text) {
-  if (text == '確認') return occasionalCheck()
+async function handleSchedule(text) {
+  if (text == '確認') return await occasionalCheck()
   const words = text.replace(/　/g, ' ').split(' ')
   if (words.length != 2) return '正しく入力してください'
   const action = words[0]
@@ -81,12 +81,14 @@ function handleSchedule(text) {
     case 'set': {
       return setSchedule(time)
     }
+    case '登録': {
+    }
     default:
       return '正しく入力してください'
   }
 }
 
-function remind() {
+async function remind() {
   const check = {
     type: 'template',
     altText: 'this is a confirm template',
@@ -115,51 +117,43 @@ function remind() {
     type: 'text',
     text: '今日は外で食べるよ'
   }
-  if (checkEatOutToday()) {
+  const eatOutToday = await checkEatOutToday()
+  if (eatOutToday) {
     client.pushMessage(userId, informEatOut)
-  } else if (checkEatOutToday() === false) {
+  } else if (eatOutToday === false) {
     client.pushMessage(userId, informNotEatOut)
-  } else if (checkEatOutToday() === null) {
+  } else if (eatOutToday === null) {
     client.pushMessage(userId, check)
   }
 }
 
-function occasionalCheck() {
-  const willEatOut = {
-    type: 'text',
-    text: '今日は外で食べる予定'
-  }
-  const willNotEatOut = {
-    type: 'text',
-    text: '今日は家で食べる予定'
-  }
-  const undecided = {
-    type: 'text',
-    text: 'まだ決まってない'
-  }
-  if (checkEatOutToday()) {
-    return willEatOut
-  } else if (checkEatOutToday() === false) {
-    return willNotEatOut
-  } else if (checkEatOutToday() === null) {
-    return undecided
+async function occasionalCheck() {
+  const eatOutToday = await checkEatOutToday()
+  if (eatOutToday) {
+    return '今日は外で食べる予定'
+  } else if (eatOutToday === false) {
+    return '今日は家で食べる予定'
+  } else if (eatOutToday === null) {
+    return 'まだ決まってない'
   }
 }
 
-function checkEatOutToday() {
+async function checkEatOutToday() {
   const today = new Date()
   const date =
     today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
   const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id=''`
-  DBclient.query(sql, (err, res) => {
-    if (err) {
+  let willEatOut = null
+  await DBclient.query(sql)
+    .then(res => {
+      if (res && res.rows[0]) {
+        willEatOut = res.rows[0].will_eatout
+      }
+    })
+    .catch(err => {
       console.log(err.stack)
-    } else {
-      console.log(res)
-      if (!res || !res.rows[0]) return null
-      return res.rows[0]
-    }
-  })
+    })
+  return willEatOut
 }
 
 function setSchedule(time) {
