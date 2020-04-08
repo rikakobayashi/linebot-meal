@@ -9,10 +9,11 @@ const cron = require('node-cron')
 
 // set database
 const DBclient = new Client({
-  user: 'rikakobayashi',
-  host: 'localhost',
-  database: 'testDB',
-  password: ''
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  password: process.env.DB_PASSWORD
 })
 
 DBclient.connect()
@@ -71,6 +72,7 @@ function handleEvent(event) {
 }
 
 function handleSchedule(text) {
+  if (words == '確認') return occasionalCheck()
   const words = text.replace(/　/g, ' ').split(' ')
   if (words.length != 2) return '正しく入力してください'
   const action = words[0]
@@ -84,7 +86,7 @@ function handleSchedule(text) {
   }
 }
 
-function checkEatOut() {
+function remind() {
   const check = {
     type: 'template',
     altText: 'this is a confirm template',
@@ -105,14 +107,65 @@ function checkEatOut() {
       ]
     }
   }
-  client.pushMessage(userId, check)
+  const informNotEatOut = {
+    type: 'text',
+    text: '今日は家で食べるよ'
+  }
+  const informEatOut = {
+    type: 'text',
+    text: '今日は外で食べるよ'
+  }
+  if (checkEatOutToday()) {
+    client.pushMessage(userId, informEatOut)
+  } else if (checkEatOutToday() === false) {
+    client.pushMessage(userId, informNotEatOut)
+  } else if (checkEatOutToday() === null) {
+    client.pushMessage(userId, check)
+  }
+}
+
+function occasionalCheck() {
+  const willEatOut = {
+    type: 'text',
+    text: '今日は外で食べる予定'
+  }
+  const willNotEatOut = {
+    type: 'text',
+    text: '今日は家で食べる予定'
+  }
+  const undecided = {
+    type: 'text',
+    text: 'まだ決まってない'
+  }
+  if (checkEatOutToday()) {
+    return willEatOut
+  } else if (checkEatOutToday() === false) {
+    return willNotEatOut
+  } else if (checkEatOutToday() === null) {
+    return undecided
+  }
+}
+
+function checkEatOutToday() {
+  const today = new Date()
+  const date =
+    today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
+  const sql = `SELECT WILLEATOUT FROM EATOUTS WHERE DATE=${date} AND userId=${userId}`
+  client.query(sql, (err, res) => {
+    if (err) {
+      console.log(err.stack)
+    } else {
+      if (!res || !res.rows[0]) return null
+      return res.rows[0]
+    }
+  })
 }
 
 function setSchedule(time) {
   const when = parseTime(time)
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
-  cron.schedule(when, checkEatOut, {
+  cron.schedule(when, remind, {
     scheduled: true,
     timezone: 'Asia/Tokyo'
   })
