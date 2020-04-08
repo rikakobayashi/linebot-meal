@@ -150,11 +150,12 @@ function checkEatOutToday() {
   const today = new Date()
   const date =
     today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-  const sql = `SELECT WILLEATOUT FROM EATOUTS WHERE DATE=${date} AND userId=${userId}`
+  const sql = `SELECT will_eatout FROM eatouts WHERE date=${date} AND user_id=''`
   client.query(sql, (err, res) => {
     if (err) {
       console.log(err.stack)
     } else {
+      console.log(res)
       if (!res || !res.rows[0]) return null
       return res.rows[0]
     }
