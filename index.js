@@ -72,7 +72,7 @@ function handleEvent(event) {
 }
 
 function handleSchedule(text) {
-  if (words == '確認') return occasionalCheck()
+  if (text == '確認') return occasionalCheck()
   const words = text.replace(/　/g, ' ').split(' ')
   if (words.length != 2) return '正しく入力してください'
   const action = words[0]
