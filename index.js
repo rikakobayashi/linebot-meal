@@ -6,6 +6,7 @@ const line = require('@line/bot-sdk')
 const express = require('express')
 const { Pool, Client } = require('pg')
 const cron = require('node-cron')
+const path = require('path')
 
 // set database
 const DBclient = new Client({
@@ -31,10 +32,10 @@ const client = new line.Client(config)
 // about Express itself: https://expressjs.com/
 const app = express()
 
-app.set('view engine', 'ejs')
-app.get('/', (req, res) => {
-  res.render('index', {})
-})
+app.use('/', express.static(path.join(__dirname, 'dist')))
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist/index.html'), {})
+// })
 
 app.post('/callback', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
@@ -43,6 +44,14 @@ app.post('/callback', line.middleware(config), (req, res) => {
       console.error(err)
       res.status(500).end()
     })
+})
+
+app.post('/register', async (req, res) => {
+  const result = await updateEatOut(req.body.date)
+  if (result === 0) {
+    setEatOut(req.body.date)
+  }
+  res.redirect('/')
 })
 
 let userId = ''
@@ -117,7 +126,7 @@ async function remind() {
     type: 'text',
     text: '今日は外で食べるよ'
   }
-  const eatOutToday = await checkEatOutToday()
+  const eatOutToday = await checkEatOut()
   if (eatOutToday) {
     client.pushMessage(userId, informEatOut)
   } else if (eatOutToday === false) {
@@ -128,7 +137,7 @@ async function remind() {
 }
 
 async function occasionalCheck() {
-  const eatOutToday = await checkEatOutToday()
+  const eatOutToday = await checkEatOut()
   if (eatOutToday) {
     return '今日は外で食べる予定'
   } else if (eatOutToday === false) {
@@ -138,11 +147,12 @@ async function occasionalCheck() {
   }
 }
 
-async function checkEatOutToday() {
+async function checkEatOut(inputDate) {
   const today = new Date()
-  const date =
-    today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id=''`
+  const date = inputDate
+    ? inputDate
+    : today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
+  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id='';`
   let willEatOut = null
   await DBclient.query(sql)
     .then(res => {
@@ -154,6 +164,26 @@ async function checkEatOutToday() {
       console.log(err.stack)
     })
   return willEatOut
+}
+
+async function updateEatOut(data) {
+  const sql = `UPDATE eatouts SET will_eatout = ${data.will_eatout} WHERE date = '${data.date}' AND user_id = '${data.user_id}';`
+  let result = null
+  await DBclient.query(sql)
+    .then(res => {
+      result = res.rowCount
+    })
+    .catch(err => {
+      console.log(err.stack)
+    })
+  return result
+}
+
+async function setEatOut(data) {
+  const sql = `INSERT INTO eatouts VALUES (${data.will_eatout}, '${data.body.date}', '${data.body.user_id}');`
+  await DBclient.query(sql).catch(err => {
+    console.log(err.stack)
+  })
 }
 
 function setSchedule(time) {
