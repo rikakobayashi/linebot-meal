@@ -5,6 +5,7 @@ import { DayPickerSingleDateController, SingleDatePicker } from 'react-dates'
 import 'react-dates/lib/css/_datepicker.css'
 import moment from 'moment'
 import { DUMMY } from './dummy'
+import { parse } from 'querystring'
 
 export interface eatOutData {
   will_eatout: boolean
@@ -30,18 +31,7 @@ class App extends React.Component<AppProps, AppState> {
 
   getQueryParam() {
     const rawParam = decodeURI(location.search)
-    switch (rawParam.slice(rawParam.indexOf('?') + 1, rawParam.indexOf('='))) {
-      case 'id': {
-        const targetLast =
-          rawParam.lastIndexOf('?') !== -1
-            ? rawParam.lastIndexOf('?')
-            : rawParam.length
-        return rawParam.slice(rawParam.indexOf('=') + 1, targetLast)
-      }
-      default: {
-        return ''
-      }
-    }
+    return parse(rawParam.slice(1)).id
   }
 
   fetchMyData = async () => {
