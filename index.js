@@ -33,6 +33,15 @@ const client = new line.Client(config)
 // about Express itself: https://expressjs.com/
 const app = express()
 
+app.post('/callback', line.middleware(config), (req, res) => {
+  Promise.all(req.body.events.map(handleEvent))
+    .then(result => res.json(result))
+    .catch(err => {
+      console.error(err)
+      res.status(500).end()
+    })
+})
+
 app.use(
   bodyParser.urlencoded({
     extended: true
@@ -42,16 +51,7 @@ app.use(bodyParser.json())
 
 app.use(express.static(path.join(__dirname, 'dist')))
 app.get('/', (req, res) => {
-  res.sendFile('index.html', {})
-})
-
-app.post('/callback', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(result => res.json(result))
-    .catch(err => {
-      console.error(err)
-      res.status(500).end()
-    })
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'), {})
 })
 
 app.post('/getMyData', async (req, res) => {
@@ -67,16 +67,12 @@ app.post('/register', async (req, res) => {
   res.redirect('/')
 })
 
-let userId = ''
-
 // event handler
 async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
     return Promise.resolve(null)
   }
-
-  userId = event.source.userId
 
   // create a echoing text message
   const echo = {
@@ -86,22 +82,22 @@ async function handleEvent(event) {
 
   const response = {
     type: 'text',
-    text: await handleSchedule(event.message.text)
+    text: await handleSchedule(event.message.text, event.source.userId)
   }
 
   // use reply API
   return client.replyMessage(event.replyToken, response)
 }
 
-async function handleSchedule(text) {
-  if (text == '確認') return await occasionalCheck()
+async function handleSchedule(text, user_id) {
+  if (text == '確認') return await occasionalCheck(user_id)
   const words = text.replace(/　/g, ' ').split(' ')
   if (words.length != 2) return '正しく入力してください'
   const action = words[0]
   const time = words[1]
   switch (action) {
     case 'set': {
-      return setSchedule(time)
+      return setSchedule(time, user_id)
     }
     case '登録': {
     }
@@ -110,7 +106,7 @@ async function handleSchedule(text) {
   }
 }
 
-async function remind() {
+async function remind(user_id) {
   const check = {
     type: 'template',
     altText: 'this is a confirm template',
@@ -139,7 +135,7 @@ async function remind() {
     type: 'text',
     text: '今日は外で食べるよ'
   }
-  const eatOutToday = await checkEatOut()
+  const eatOutToday = await checkEatOutToday(user_id)
   if (eatOutToday) {
     client.pushMessage(userId, informEatOut)
   } else if (eatOutToday === false) {
@@ -149,8 +145,8 @@ async function remind() {
   }
 }
 
-async function occasionalCheck() {
-  const eatOutToday = await checkEatOut()
+async function occasionalCheck(user_id) {
+  const eatOutToday = await checkEatOutToday(user_id)
   if (eatOutToday) {
     return '今日は外で食べる予定'
   } else if (eatOutToday === false) {
@@ -173,12 +169,11 @@ async function getMyData(user_id) {
   return myData
 }
 
-async function checkEatOut(inputDate) {
+async function checkEatOutToday(user_id) {
   const today = new Date()
-  const date = inputDate
-    ? inputDate
-    : today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id=''`
+  const date =
+    today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
+  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id='${user_id}'`
   let willEatOut = null
   await DBclient.query(sql)
     .then(res => {
@@ -212,11 +207,11 @@ async function setEatOut(data) {
   })
 }
 
-function setSchedule(time) {
+function setSchedule(time, user_id) {
   const when = parseTime(time)
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
-  cron.schedule(when, remind, {
+  cron.schedule(when, () => remind(user_id), {
     scheduled: true,
     timezone: 'Asia/Tokyo'
   })

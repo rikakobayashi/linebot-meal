@@ -36,7 +36,7 @@ class App extends React.Component<AppProps, AppState> {
 
   fetchMyData = async () => {
     const body = { user_id: this.getQueryParam() }
-    const res = fetch('http://localhost:1234' + '/getMyData', {
+    const res = fetch('/getMyData', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: {
