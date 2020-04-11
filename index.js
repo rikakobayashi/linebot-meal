@@ -7,6 +7,7 @@ const express = require('express')
 const { Pool, Client } = require('pg')
 const cron = require('node-cron')
 const path = require('path')
+const bodyParser = require('body-parser')
 
 // set database
 const DBclient = new Client({
@@ -32,10 +33,17 @@ const client = new line.Client(config)
 // about Express itself: https://expressjs.com/
 const app = express()
 
-app.use('/', express.static(path.join(__dirname, 'dist')))
-// app.get('/', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'dist/index.html'), {})
-// })
+app.use(
+  bodyParser.urlencoded({
+    extended: true
+  })
+)
+app.use(bodyParser.json())
+
+app.use(express.static(path.join(__dirname, 'dist')))
+app.get('/', (req, res) => {
+  res.sendFile('index.html', {})
+})
 
 app.post('/callback', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
@@ -46,10 +54,15 @@ app.post('/callback', line.middleware(config), (req, res) => {
     })
 })
 
+app.post('/getMyData', async (req, res) => {
+  const myData = await getMyData(req.body.user_id)
+  res.send(myData)
+})
+
 app.post('/register', async (req, res) => {
-  const result = await updateEatOut(req.body.date)
+  const result = await updateEatOut(req.body)
   if (result === 0) {
-    setEatOut(req.body.date)
+    setEatOut(req.body)
   }
   res.redirect('/')
 })
@@ -147,12 +160,25 @@ async function occasionalCheck() {
   }
 }
 
+async function getMyData(user_id) {
+  const sql = `SELECT will_eatout,date FROM eatouts WHERE user_id='${user_id}'`
+  let myData = null
+  await DBclient.query(sql)
+    .then(res => {
+      myData = res.rows
+    })
+    .catch(err => {
+      console.log(err.stack)
+    })
+  return myData
+}
+
 async function checkEatOut(inputDate) {
   const today = new Date()
   const date = inputDate
     ? inputDate
     : today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id='';`
+  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id=''`
   let willEatOut = null
   await DBclient.query(sql)
     .then(res => {
@@ -167,7 +193,7 @@ async function checkEatOut(inputDate) {
 }
 
 async function updateEatOut(data) {
-  const sql = `UPDATE eatouts SET will_eatout = ${data.will_eatout} WHERE date = '${data.date}' AND user_id = '${data.user_id}';`
+  const sql = `UPDATE eatouts SET will_eatout = ${data.will_eatout} WHERE date = '${data.date}' AND user_id = '${data.user_id}'`
   let result = null
   await DBclient.query(sql)
     .then(res => {
@@ -180,7 +206,7 @@ async function updateEatOut(data) {
 }
 
 async function setEatOut(data) {
-  const sql = `INSERT INTO eatouts VALUES (${data.will_eatout}, '${data.body.date}', '${data.body.user_id}');`
+  const sql = `INSERT INTO eatouts VALUES (${data.will_eatout}, '${data.date}', '${data.user_id}');`
   await DBclient.query(sql).catch(err => {
     console.log(err.stack)
   })

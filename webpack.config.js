@@ -9,16 +9,18 @@ module.exports = {
     path: path.join(__dirname, 'dist')
   },
   module: {
-    rules: [
-      {
+    rules: [{
         test: /\.tsx?$/,
         loader: 'ts-loader'
       },
       {
-        test: /\.scss$/,
+        test: /\.(css|scss)$/,
         use: ['style-loader', 'css-loader', 'sass-loader']
       }
     ]
+  },
+  resolve: {
+    extensions: [".ts", ".tsx", ".js", ".json"]
   },
   devServer: {
     contentBase: path.join(__dirname, 'dist')
