@@ -100,6 +100,7 @@ async function handleSchedule(text, user_id) {
       return setSchedule(time, user_id)
     }
     case '登録': {
+      return 'https://mealbot-chanrika.herokuapp.com/?id=' + user_id
     }
     default:
       return '正しく入力してください'
