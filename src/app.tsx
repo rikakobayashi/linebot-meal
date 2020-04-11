@@ -105,37 +105,23 @@ class App extends React.Component<AppProps, AppState> {
 
   render() {
     return (
-      <>
-        <DayPickerSingleDateController
-          date={this.state.date}
-          onDateChange={date =>
-            this.onDateChange(
-              date,
-              this.state.myData ? this.state.myData : this.props.dummyData
-            )
-          }
-          focused={true}
-          onFocusChange={() => {}}
-          isDayHighlighted={day =>
-            this.isDayHighlighted(
-              day,
-              this.state.myData ? this.state.myData : this.props.dummyData
-            )
-          }
-        />
-        <SingleDatePicker
-          id={''}
-          date={moment(
-            this.state.myData
-              ? this.state.myData[0].date
-              : this.props.dummyData[0].date
-          )}
-          onDateChange={() => {}}
-          focused={true}
-          onFocusChange={() => {}}
-          numberOfMonths={1}
-        />
-      </>
+      <DayPickerSingleDateController
+        date={this.state.date}
+        onDateChange={date =>
+          this.onDateChange(
+            date,
+            this.state.myData ? this.state.myData : this.props.dummyData
+          )
+        }
+        focused={true}
+        onFocusChange={() => {}}
+        isDayHighlighted={day =>
+          this.isDayHighlighted(
+            day,
+            this.state.myData ? this.state.myData : this.props.dummyData
+          )
+        }
+      />
     )
   }
 }
