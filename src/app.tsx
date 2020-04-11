@@ -55,7 +55,7 @@ class App extends React.Component<AppProps, AppState> {
       date: date.format('YYYY-MM-DD'),
       user_id: this.getQueryParam()
     }
-    const res = fetch('http://localhost:1234' + '/register', {
+    const res = fetch('/register', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: {
