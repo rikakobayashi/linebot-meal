@@ -136,11 +136,11 @@ async function remind(user_id) {
   }
   const eatOutToday = await checkEatOutToday(user_id)
   if (eatOutToday) {
-    client.pushMessage(userId, informEatOut)
+    client.pushMessage(user_id, informEatOut)
   } else if (eatOutToday === false) {
-    client.pushMessage(userId, informNotEatOut)
+    client.pushMessage(user_id, informNotEatOut)
   } else if (eatOutToday === null) {
-    client.pushMessage(userId, check)
+    client.pushMessage(user_id, check)
   }
 }
 
