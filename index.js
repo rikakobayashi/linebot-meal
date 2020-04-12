@@ -90,6 +90,7 @@ async function handleEvent(event) {
 }
 
 async function handleSchedule(text, user_id) {
+  if (text == '登録') return process.env.BASE_URL + '?id=' + user_id
   if (text == '確認') return await occasionalCheck(user_id)
   const words = text.replace(/　/g, ' ').split(' ')
   if (words.length != 2) return '正しく入力してください'
@@ -98,9 +99,6 @@ async function handleSchedule(text, user_id) {
   switch (action) {
     case 'set': {
       return setSchedule(time, user_id)
-    }
-    case '登録': {
-      return 'https://mealbot-chanrika.herokuapp.com/?id=' + user_id
     }
     default:
       return '正しく入力してください'
