@@ -1,3 +1,30 @@
 * {
   font-family: Circular, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
 }
+
+.CalendarDay__selected {
+  // border: 1px double #5ec1ba;
+  color: #484848;
+  background: #fff;
+
+  &:active,
+  &:hover {
+    color: #484848;
+    background: #e4e7e7;
+  }
+}
+
+.CalendarDay__highlighted_calendar {
+  background: #00a699;
+  // border: 1px double #00a699;
+  color: #fff;
+
+  &:hover {
+    background: #22bfb2;
+    color: #fff;
+  }
+}
+
+.DayPicker {
+  margin: 0 auto;
+}
