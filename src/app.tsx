@@ -80,11 +80,20 @@ class App extends React.Component<AppProps, AppState> {
 
   isDayHighlighted = (date: moment.Moment, allData: eatOutData[]) => {
     const eatOutData = allData.find(data => {
-      return (
-        moment(data.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
-      )
+      return !this.isOutsideRange(date)
+        ? moment(data.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
+        : false
     })
     return eatOutData ? eatOutData.will_eatout : false
+  }
+
+  isOutsideRange = (day: moment.Moment) => {
+    return day.isBefore(
+      moment()
+        .locale('ja')
+        .subtract(24, 'h')
+        .add(1, 's')
+    )
   }
 
   async componentDidMount() {
@@ -98,7 +107,7 @@ class App extends React.Component<AppProps, AppState> {
     moment.lang('ja')
     return (
       <DayPickerSingleDateController
-        date={this.state.date}
+        date={null}
         onDateChange={date =>
           this.onDateChange(
             date,
@@ -113,10 +122,11 @@ class App extends React.Component<AppProps, AppState> {
             this.state.myData ? this.state.myData : this.props.dummyData
           )
         }
-        hideKeyboardShortcutsPanel
         monthFormat={'YYYY年M月'}
         initialVisibleMonth={() => moment().locale('ja')}
         weekDayFormat={'dd'}
+        isOutsideRange={this.isOutsideRange}
+        hideKeyboardShortcutsPanel
       />
     )
   }
