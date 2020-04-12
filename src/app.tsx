@@ -6,6 +6,7 @@ import 'react-dates/lib/css/_datepicker.css'
 import moment from 'moment'
 import { DUMMY } from './dummy'
 import { parse } from 'querystring'
+import './style.scss'
 
 export interface eatOutData {
   will_eatout: boolean
@@ -94,6 +95,7 @@ class App extends React.Component<AppProps, AppState> {
   }
 
   render() {
+    moment.lang('ja')
     return (
       <DayPickerSingleDateController
         date={this.state.date}
@@ -111,6 +113,10 @@ class App extends React.Component<AppProps, AppState> {
             this.state.myData ? this.state.myData : this.props.dummyData
           )
         }
+        hideKeyboardShortcutsPanel
+        monthFormat={'YYYY年M月'}
+        initialVisibleMonth={() => moment().locale('ja')}
+        weekDayFormat={'dd'}
       />
     )
   }
