@@ -55,7 +55,7 @@ app.get('/', (req, res) => {
 })
 
 app.post('/getMyData', async (req, res) => {
-  const myData = await getMyData(req.body.user_id)
+  const myData = await getMyData(req.body.id)
   res.send(myData)
 })
 
@@ -80,64 +80,75 @@ async function handleEvent(event) {
     text: event.message.text
   }
 
-  switch (event.message.text) {
-    case '家で食べる': {
-      return
-    }
-    case '外で食べる': {
-      return
-    }
-    case '登録': {
-      return client.replyMessage(event.replyToken, {
-        type: 'template',
-        altText: 'this is a carousel template',
-        template: {
-          type: 'buttons',
-          title: '予定を登録',
-          text: '登録ボタンをタップするとカレンダーページに飛びます',
-          // defaultAction: {
-          //   type: 'uri',
-          //   label: 'View detail',
-          //   uri: process.env.BASE_URL + '?id=' + user_id
-          // },
-          actions: [
-            {
-              type: 'uri',
-              label: '登録する',
-              uri: process.env.BASE_URL + '?id=' + event.source.userId
-            }
-          ]
-        }
-      })
-    }
-  }
+  if (
+    event.message.text === '家で食べる' ||
+    event.message.text === '外で食べる'
+  )
+    return
 
-  const response = {
-    type: 'text',
-    text: await handleSchedule(event.message.text, event.source.userId)
-  }
+  // グループの場合はgroupId, トークルームの場合はroomId, 個人の場合はuserIdを返す
+  const id =
+    event.source.type === 'group'
+      ? event.source.groupId
+      : event.source.type === 'room'
+      ? event.source.roomId
+      : event.source.userId
+
+  const response = await handleSchedule(event.message.text, id)
 
   // use reply API
   return client.replyMessage(event.replyToken, response)
 }
 
-async function handleSchedule(text, user_id) {
-  if (text == '登録') return process.env.BASE_URL + '?id=' + user_id
-  if (text == '確認') return await occasionalCheck(user_id)
-  const words = text.replace(/　/g, ' ').split(' ')
-  if (words.length != 2) return '正しく入力してください'
-  const action = words[0]
-  const time = words[1]
-  switch (action) {
-    case 'リマインド': {
-      return setSchedule(time, user_id)
+async function handleSchedule(text, id) {
+  switch (text) {
+    case '登録': {
+      return {
+        type: 'template',
+        altText: '予定を登録',
+        template: {
+          type: 'buttons',
+          title: '予定を登録',
+          text: '登録ボタンをタップするとカレンダーページに飛びます',
+          actions: [
+            {
+              type: 'uri',
+              label: '登録する',
+              uri: process.env.BASE_URL + '?id=' + id
+            }
+          ]
+        }
+      }
     }
-    default:
-      return '正しく入力してください'
+    case '確認': {
+      return occasionalCheck(id).then(res => {
+        return getTextMessage(res)
+      })
+    }
+    default: {
+      const words = text.replace(/　/g, ' ').split(' ')
+      if (words.length != 2) return getTextMessage('正しく入力してください')
+      const action = words[0]
+      const time = words[1]
+      switch (action) {
+        case 'リマインド': {
+          return setSchedule(time, id)
+        }
+        default:
+          return getTextMessage('正しく入力してください')
+      }
+    }
   }
 }
 
-async function remind(user_id) {
+function getTextMessage(text) {
+  return {
+    type: 'text',
+    text: text
+  }
+}
+
+async function remind(id) {
   const check = {
     type: 'template',
     altText: 'this is a confirm template',
@@ -166,18 +177,18 @@ async function remind(user_id) {
     type: 'text',
     text: '今日は外で食べるよ'
   }
-  const eatOutToday = await checkEatOutToday(user_id)
+  const eatOutToday = await checkEatOutToday(id)
   if (eatOutToday) {
-    client.pushMessage(user_id, informEatOut)
+    client.pushMessage(id, informEatOut)
   } else if (eatOutToday === false) {
-    client.pushMessage(user_id, informNotEatOut)
+    client.pushMessage(id, informNotEatOut)
   } else if (eatOutToday === null) {
-    client.pushMessage(user_id, check)
+    client.pushMessage(id, check)
   }
 }
 
-async function occasionalCheck(user_id) {
-  const eatOutToday = await checkEatOutToday(user_id)
+async function occasionalCheck(id) {
+  const eatOutToday = await checkEatOutToday(id)
   if (eatOutToday) {
     return '今日は外で食べる予定'
   } else if (eatOutToday === false) {
@@ -187,8 +198,8 @@ async function occasionalCheck(user_id) {
   }
 }
 
-async function getMyData(user_id) {
-  const sql = `SELECT will_eatout,date FROM eatouts WHERE user_id='${user_id}'`
+async function getMyData(id) {
+  const sql = `SELECT will_eatout,date FROM eatouts WHERE user_id='${id}'`
   let myData = null
   await DBclient.query(sql)
     .then(res => {
@@ -200,11 +211,11 @@ async function getMyData(user_id) {
   return myData
 }
 
-async function checkEatOutToday(user_id) {
+async function checkEatOutToday(id) {
   const today = new Date()
   const date =
     today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id='${user_id}'`
+  const sql = `SELECT will_eatout FROM eatouts WHERE date='${date}' AND user_id='${id}'`
   let willEatOut = null
   await DBclient.query(sql)
     .then(res => {
@@ -219,7 +230,7 @@ async function checkEatOutToday(user_id) {
 }
 
 async function updateEatOut(data) {
-  const sql = `UPDATE eatouts SET will_eatout = ${data.will_eatout} WHERE date = '${data.date}' AND user_id = '${data.user_id}'`
+  const sql = `UPDATE eatouts SET will_eatout = ${data.will_eatout} WHERE date = '${data.date}' AND user_id = '${data.id}'`
   let result = null
   await DBclient.query(sql)
     .then(res => {
@@ -232,17 +243,17 @@ async function updateEatOut(data) {
 }
 
 async function setEatOut(data) {
-  const sql = `INSERT INTO eatouts VALUES (${data.will_eatout}, '${data.date}', '${data.user_id}');`
+  const sql = `INSERT INTO eatouts VALUES (${data.will_eatout}, '${data.date}', '${data.id}');`
   await DBclient.query(sql).catch(err => {
     console.log(err.stack)
   })
 }
 
-function setSchedule(time, user_id) {
+function setSchedule(time, id) {
   const when = parseTime(time)
   if (!when)
     return '時間は半角数字、「:」区切りで正しく入力してください。\n[例] 15:00'
-  cron.schedule(when, () => remind(user_id), {
+  cron.schedule(when, () => remind(id), {
     scheduled: true,
     timezone: 'Asia/Tokyo'
   })

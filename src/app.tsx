@@ -36,7 +36,7 @@ class App extends React.Component<AppProps, AppState> {
   }
 
   fetchMyData = async () => {
-    const body = { user_id: this.getQueryParam() }
+    const body = { id: this.getQueryParam() }
     const res = fetch('/getMyData', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -54,7 +54,7 @@ class App extends React.Component<AppProps, AppState> {
     const body = {
       will_eatout: will_eatout,
       date: date.format('YYYY-MM-DD'),
-      user_id: this.getQueryParam()
+      id: this.getQueryParam()
     }
     const res = fetch('/register', {
       method: 'POST',
