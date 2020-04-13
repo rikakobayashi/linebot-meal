@@ -80,6 +80,38 @@ async function handleEvent(event) {
     text: event.message.text
   }
 
+  switch (event.message.text) {
+    case '家で食べる': {
+      return
+    }
+    case '外で食べる': {
+      return
+    }
+    case '登録': {
+      return client.replyMessage(event.replyToken, {
+        type: 'template',
+        altText: 'this is a carousel template',
+        template: {
+          type: 'buttons',
+          title: '予定を登録',
+          text: '登録ボタンをタップするとカレンダーページに飛びます',
+          // defaultAction: {
+          //   type: 'uri',
+          //   label: 'View detail',
+          //   uri: process.env.BASE_URL + '?id=' + user_id
+          // },
+          actions: [
+            {
+              type: 'uri',
+              label: '登録する',
+              uri: process.env.BASE_URL + '?id=' + event.source.userId
+            }
+          ]
+        }
+      })
+    }
+  }
+
   const response = {
     type: 'text',
     text: await handleSchedule(event.message.text, event.source.userId)
@@ -97,7 +129,7 @@ async function handleSchedule(text, user_id) {
   const action = words[0]
   const time = words[1]
   switch (action) {
-    case 'set': {
+    case 'リマインド': {
       return setSchedule(time, user_id)
     }
     default:
@@ -116,12 +148,12 @@ async function remind(user_id) {
         {
           type: 'message',
           label: 'はい',
-          text: 'yes'
+          text: '家で食べる'
         },
         {
           type: 'message',
           label: 'いいえ',
-          text: 'no'
+          text: '外で食べる'
         }
       ]
     }
