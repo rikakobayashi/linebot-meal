@@ -132,7 +132,7 @@ async function handleSchedule(text, id) {
       const time = words[1]
       switch (action) {
         case 'リマインド': {
-          return setSchedule(time, id)
+          return getTextMessage(setSchedule(time, id))
         }
         default:
           return getTextMessage('正しく入力してください')
